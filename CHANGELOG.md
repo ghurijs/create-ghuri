@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- "Add a GraphQL API?" prompt and `--graphql` / `--no-graphql` (default no): runs `startProject({ graphql: true })` from `@ghuri/cli`, adding `@ghuri/graphql`, `src/schema.ts` and `/graphql/`.
+
 ## 0.1.0-alpha.0
 
 - `npm create ghuri@latest [name]`: prompts (project name, database D1 / Postgres / SQLite, package manager,

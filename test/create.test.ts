@@ -46,6 +46,7 @@ describe('parseCreateArgs', () => {
       name: 'site',
       db: 'postgres',
       pm: 'pnpm',
+      graphql: undefined,
       install: false,
       git: false,
       yes: true,
@@ -53,6 +54,8 @@ describe('parseCreateArgs', () => {
       version: false,
     })
     expect(parseCreateArgs([]).install).toBeUndefined()
+    expect(parseCreateArgs(['--graphql']).graphql).toBe(true)
+    expect(parseCreateArgs(['--no-graphql']).graphql).toBe(false)
   })
 
   it('validates choices', () => {
@@ -68,7 +71,14 @@ describe('resolveAnswers (non-interactive)', () => {
       interactive: false,
       env: { npm_config_user_agent: 'pnpm/9.0.0 npm/? node/v24' },
     })
-    expect(a).toEqual({ name: 'my-ghuri-app', db: 'd1', pm: 'pnpm', install: true, git: true })
+    expect(a).toEqual({
+      name: 'my-ghuri-app',
+      db: 'd1',
+      pm: 'pnpm',
+      graphql: false,
+      install: true,
+      git: true,
+    })
   })
 
   it('rejects invalid names', async () => {
@@ -114,6 +124,16 @@ describe('createGhuri', () => {
     expect(out).toContain('bun install')
     expect(out).toContain('bunx ghuri migrate')
     expect(out).not.toContain('wrangler d1 create')
+  })
+
+  it('--graphql adds @ghuri/graphql to the project', async () => {
+    const cwd = tmpDir()
+    const { code, out } = await create(['api', '--graphql', '--yes', '--no-install', '--no-git'], { cwd })
+    expect(code).toBe(0)
+    expect(out).toContain('Created api (Cloudflare D1 + GraphQL)')
+    const pkg = JSON.parse(readFileSync(join(cwd, 'api', 'package.json'), 'utf8'))
+    expect(pkg.dependencies['@ghuri/graphql']).toBeTruthy()
+    expect(existsSync(join(cwd, 'api', 'src', 'schema.ts'))).toBe(true)
   })
 
   it('reports a failed install but still finishes', async () => {

@@ -39,6 +39,8 @@ export interface CreateAnswers {
   name: string
   db: DatabaseChoice
   pm: PackageManager
+  /** Add GraphQL (@ghuri/graphql). */
+  graphql: boolean
   install: boolean
   git: boolean
 }
@@ -52,6 +54,7 @@ Create a new Ghuri project (Django for TypeScript on Cloudflare Workers).
 Options:
   --db <d1|postgres|sqlite>       Database (default: d1)
   --pm <npm|pnpm|bun|yarn>        Package manager (default: the one running create-ghuri)
+  --graphql / --no-graphql        Add a GraphQL API with @ghuri/graphql (default: no)
   --install / --no-install        Install dependencies (default: yes)
   --git / --no-git                Initialise a git repository (default: yes)
   -y, --yes                       Accept defaults for everything not given; never prompt
@@ -104,11 +107,11 @@ export const defaultSpawn: SpawnFn = (command, args, opts) =>
 
 /** Parse argv into partial answers. */
 export function parseCreateArgs(argv: string[]) {
-  // `--no-install` / `--no-git` (parseArgs' allowNegative needs Node 22.4+).
-  const negated: { install?: boolean; git?: boolean } = {}
+  // `--no-install` / `--no-git` / `--no-graphql` (parseArgs' allowNegative needs Node 22.4+).
+  const negated: { install?: boolean; git?: boolean; graphql?: boolean } = {}
   const rest = argv.filter((a) => {
-    const m = /^--no-(install|git)$/.exec(a)
-    if (m) negated[m[1] as 'install' | 'git'] = false
+    const m = /^--no-(install|git|graphql)$/.exec(a)
+    if (m) negated[m[1] as 'install' | 'git' | 'graphql'] = false
     return !m
   })
   const { values, positionals } = parseArgs({
@@ -120,6 +123,7 @@ export function parseCreateArgs(argv: string[]) {
       pm: { type: 'string' },
       install: { type: 'boolean' },
       git: { type: 'boolean' },
+      graphql: { type: 'boolean' },
       yes: { type: 'boolean', short: 'y' },
       help: { type: 'boolean', short: 'h' },
       version: { type: 'boolean', short: 'v' },
@@ -136,6 +140,7 @@ export function parseCreateArgs(argv: string[]) {
     name: positionals[0],
     db: values.db as DatabaseChoice | undefined,
     pm: values.pm as PackageManager | undefined,
+    graphql: negated.graphql ?? values.graphql,
     install: negated.install ?? values.install,
     git: negated.git ?? values.git,
     yes: !!values.yes,
@@ -158,6 +163,7 @@ export async function resolveAnswers(
       name,
       db: args.db ?? 'd1',
       pm: args.pm ?? detected,
+      graphql: args.graphql ?? false,
       install: args.install ?? true,
       git: args.git ?? true,
     }
@@ -194,6 +200,12 @@ export async function resolveAnswers(
     cancelled(answer)
     pm = answer as PackageManager
   }
+  let graphql = args.graphql
+  if (graphql === undefined) {
+    const answer = await p.confirm({ message: 'Add a GraphQL API (@ghuri/graphql)?', initialValue: false })
+    cancelled(answer)
+    graphql = answer as boolean
+  }
   let install = args.install
   if (install === undefined) {
     const answer = await p.confirm({ message: `Install dependencies with ${pm}?`, initialValue: true })
@@ -206,7 +218,7 @@ export async function resolveAnswers(
     cancelled(answer)
     git = answer as boolean
   }
-  return { name, db, pm, install, git }
+  return { name, db, pm, graphql, install, git }
 }
 
 /**
@@ -243,9 +255,16 @@ export async function createGhuri(argv: string[], opts: CreateOptions = {}): Pro
   try {
     if (interactive) p.intro(pc.bgCyan(pc.black(' create-ghuri ')))
     const answers = await resolveAnswers(args, { interactive, env })
-    const result = startProject({ name: answers.name, cwd, db: answers.db, pm: answers.pm })
+    const result = startProject({
+      name: answers.name,
+      cwd,
+      db: answers.db,
+      pm: answers.pm,
+      graphql: answers.graphql,
+    })
+    const extras = answers.graphql ? ' + GraphQL' : ''
     say(
-      `${pc.green('✔')} Created ${pc.bold(answers.name)} (${DB_LABELS[answers.db].label}) in ${result.directory}`,
+      `${pc.green('✔')} Created ${pc.bold(answers.name)} (${DB_LABELS[answers.db].label}${extras}) in ${result.directory}`,
     )
 
     let installed = false

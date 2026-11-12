@@ -19,8 +19,10 @@ You are asked for:
 2. **Database** — Cloudflare D1 (default), Postgres (Hyperdrive on Workers / `DATABASE_URL` elsewhere), or
    SQLite (a Node.js project with better-sqlite3 and local file storage)
 3. **Package manager** — npm, pnpm, bun or yarn (defaults to the one you ran `create` with)
-4. **Install dependencies?**
-5. **Initialise a git repository?** (with an initial commit when git is configured)
+4. **Add a GraphQL API?** — [`@ghuri/graphql`](https://github.com/ghurijs/graphql): `GraphQLConfig`,
+   `src/schema.ts` and GraphiQL at `/graphql/` (default: no)
+5. **Install dependencies?**
+6. **Initialise a git repository?** (with an initial commit when git is configured)
 
 Then it runs `ghuri startproject` from [`@ghuri/cli`](https://github.com/ghurijs/cli) (which generates a
 random `SECRET_KEY` into `.dev.vars`) and prints the next steps:
@@ -44,6 +46,7 @@ npm create ghuri@latest mysite -- --db d1 --pm npm --yes
 | `[name]` | Project name / directory (default `my-ghuri-app` with `--yes`) |
 | `--db <d1\|postgres\|sqlite>` | Database (default `d1`) |
 | `--pm <npm\|pnpm\|bun\|yarn>` | Package manager (default: detected) |
+| `--graphql` / `--no-graphql` | Add `@ghuri/graphql` (`startproject --graphql`; default: no) |
 | `--install` / `--no-install` | Install dependencies (default: yes) |
 | `--git` / `--no-git` | `git init` + initial commit (default: yes) |
 | `-y, --yes` | Never prompt; use defaults for anything not given |
