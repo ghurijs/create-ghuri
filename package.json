@@ -25,7 +25,7 @@
     "framework"
   ],
   "bin": {
-    "create-ghuri": "./dist/index.js"
+    "create-ghuri": "dist/index.js"
   },
   "exports": {
     ".": {
