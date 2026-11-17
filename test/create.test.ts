@@ -1,5 +1,6 @@
 import { existsSync, mkdirSync, readFileSync, rmSync } from 'node:fs'
 import { join, resolve } from 'node:path'
+import { stripVTControlCharacters } from 'node:util'
 import { afterAll, describe, expect, it } from 'vitest'
 import { type CreateOptions, createGhuri, parseCreateArgs, resolveAnswers } from '../src/create'
 
@@ -35,7 +36,8 @@ async function create(argv: string[], opts: CreateOptions = {}) {
     },
     ...opts,
   })
-  return { code, out, err, calls }
+  // picocolors enables colour when CI is set (GitHub Actions), so compare plain text.
+  return { code, out: stripVTControlCharacters(out), err: stripVTControlCharacters(err), calls }
 }
 
 describe('parseCreateArgs', () => {
